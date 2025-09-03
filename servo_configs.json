@@ -1,0 +1,22 @@
+{
+    "servo_0": {
+        "name": "Base Servo",
+        "channel": 0,
+        "min_angle": 0,
+        "max_angle": 180,
+        "min_pulse_us": 500,
+        "max_pulse_us": 2500,
+        "default_angle": 90,
+        "enabled": true
+    },
+    "servo_1756895997294": {
+        "name": "idk",
+        "channel": 15,
+        "min_angle": 0,
+        "max_angle": 180,
+        "min_pulse_us": 500,
+        "max_pulse_us": 2500,
+        "default_angle": 90,
+        "enabled": true
+    }
+}

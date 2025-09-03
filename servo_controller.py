@@ -4,6 +4,7 @@ from board import SCL, SDA
 import busio
 from adafruit_pca9685 import PCA9685
 import config
+import os
 
 class MultiServoController:
     """Handles multiple servo motors via PCA9685 PWM driver"""
@@ -12,7 +13,7 @@ class MultiServoController:
         self.i2c = None
         self.pca = None
         self.servos = {}
-        self.servo_configs = config.SERVOS.copy()
+        self.servo_configs = self.load_servo_configs()
         self.initialized = False
     
     def initialize(self):
@@ -168,6 +169,7 @@ class MultiServoController:
                 }
                 self._set_servo_angle(servo_id, servo_config['default_angle'])
             
+            self.save_servo_configs()
             return True, "Servo added successfully"
             
         except Exception as e:
@@ -184,6 +186,7 @@ class MultiServoController:
             if servo_id in self.servo_configs:
                 del self.servo_configs[servo_id]
             
+            self.save_servo_configs()
             return True, "Servo removed successfully"
             
         except Exception as e:
@@ -219,6 +222,18 @@ class MultiServoController:
             
         except Exception as e:
             return False, str(e)
+
+    def load_servo_configs(self):
+        """Load servo configurations from JSON file"""
+        if os.path.exists(config.SERVO_CONFIG_FILE):
+            with open(config.SERVO_CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        return {}
+
+    def save_servo_configs(self):
+        """Save servo configurations to JSON file"""
+        with open(config.SERVO_CONFIG_FILE, 'w') as f:
+            json.dump(self.servo_configs, f, indent=4)
     
     def center_all(self):
         """Move all servos to their center positions"""

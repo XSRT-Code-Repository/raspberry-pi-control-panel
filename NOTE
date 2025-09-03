@@ -1,0 +1,11 @@
+- Servo minimum open/close time
+- move every servo to safe position
+- adjust servo with +1 -1 button
+- implement open/close position
+
+## workflow
+
+1. write UI in index.html
+2. UI call function in script.js
+3. script.js call backend in app.py
+4. app.py call servo_controller.py

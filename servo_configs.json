@@ -18,5 +18,15 @@
         "max_pulse_us": 2500,
         "default_angle": 90,
         "enabled": true
+    },
+    "servo_1756897604436": {
+        "name": "amogus",
+        "channel": 14,
+        "min_angle": 0,
+        "max_angle": 180,
+        "min_pulse_us": 500,
+        "max_pulse_us": 2500,
+        "default_angle": 90,
+        "enabled": true
     }
 }

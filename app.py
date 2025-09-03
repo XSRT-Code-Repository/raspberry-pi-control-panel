@@ -74,12 +74,7 @@ def add_servo():
             return jsonify({'success': False, 'error': 'Missing servo_id or config'})
         
         success, message = servo_controller.add_servo(servo_id, servo_config)
-        
-        if success:
-            # Save updated configurations to file
-            configs = servo_controller.servo_configs
-            save_servo_configs(configs)
-        
+
         return jsonify({'success': success, 'message': message})
     
     except Exception as e:
@@ -92,12 +87,7 @@ def update_servo(servo_id):
         data = request.get_json()
         
         success, message = servo_controller.update_servo_config(servo_id, data)
-        
-        if success:
-            # Save updated configurations to file
-            configs = servo_controller.servo_configs
-            save_servo_configs(configs)
-        
+
         return jsonify({'success': success, 'message': message})
     
     except Exception as e:
@@ -108,12 +98,7 @@ def remove_servo(servo_id):
     """Remove a servo configuration"""
     try:
         success, message = servo_controller.remove_servo(servo_id)
-        
-        if success:
-            # Save updated configurations to file
-            configs = servo_controller.servo_configs
-            save_servo_configs(configs)
-            
+
         return jsonify({'success': success, 'message': message})
     
     except Exception as e:

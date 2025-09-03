@@ -218,6 +218,7 @@ class MultiServoController:
                 if servo_id in self.servos:
                     del self.servos[servo_id]
             
+            self.save_servo_configs()
             return True, "Servo configuration updated"
             
         except Exception as e:

@@ -21,7 +21,7 @@
     },
     "servo_1756897604436": {
         "name": "amogus",
-        "channel": 14,
+        "channel": 13,
         "min_angle": 0,
         "max_angle": 180,
         "min_pulse_us": 500,

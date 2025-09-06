@@ -97,9 +97,8 @@ class MultiServoController:
         angle = max(min_angle, min(max_angle, int(angle)))
         
         # Convert angle to pulse width
-        angle_range = max_angle - min_angle
         pulse_range = servo_config['max_pulse_us'] - servo_config['min_pulse_us']
-        normalized_angle = (angle - min_angle) / angle_range
+        normalized_angle = angle / 180 # TODO: support for 270 and 360 degree servos
         pulse_us = servo_config['min_pulse_us'] + normalized_angle * pulse_range
         
         # Set the servo pulse

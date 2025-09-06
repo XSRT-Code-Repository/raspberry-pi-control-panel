@@ -1,8 +1,8 @@
 {
     "servo_0": {
-        "name": "Base Servo",
+        "name": "Fill",
         "channel": 0,
-        "min_angle": 0,
+        "min_angle": 90,
         "max_angle": 180,
         "min_pulse_us": 500,
         "max_pulse_us": 2500,
@@ -10,7 +10,7 @@
         "enabled": true
     },
     "servo_1756895997294": {
-        "name": "idk",
+        "name": "Drain",
         "channel": 15,
         "min_angle": 0,
         "max_angle": 180,
@@ -20,7 +20,7 @@
         "enabled": true
     },
     "servo_1756897604436": {
-        "name": "amogus",
+        "name": "Tank",
         "channel": 13,
         "min_angle": 0,
         "max_angle": 180,

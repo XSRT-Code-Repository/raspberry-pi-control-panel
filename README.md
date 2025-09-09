@@ -16,23 +16,34 @@ servo_controller/
 
 ## Installation & Setup
 
-1. **Create project directory:**
+1. **Create python venv**
 ```bash
-mkdir servo_controller
-cd servo_controller
+python -m venv ./venv
 ```
 
-2. **Install dependencies:**
+2. **Activate venv**
+
+Windows
+```bash
+venv\Scripts\activate
+```
+
+Linux
+```
+source venv/bin/activate
+```
+
+3. **Install dependencies:**
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **Run the application:**
+4. **Run the application:**
 ```bash
 python app.py
 ```
 
-4. **Access the web interface:**
+5. **Access the web interface:**
 Open browser to `http://localhost:5000`
 
 ## Usage

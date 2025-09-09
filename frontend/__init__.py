@@ -10,7 +10,7 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 servo_controller = MultiServoController()
 
 # Pass app to Route class to register all routes
-Route(app)
+Route(app, servo_controller)
 
 def cleanup():
     """Clean up resources"""

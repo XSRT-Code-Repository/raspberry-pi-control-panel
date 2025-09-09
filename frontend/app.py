@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
-from servo_controller import MultiServoController
-import config
+from backend.servo_controller import MultiServoController
+import backend.config as config
 import json
 import os
 

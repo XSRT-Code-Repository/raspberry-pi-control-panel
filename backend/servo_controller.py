@@ -1,10 +1,31 @@
+# Try importing hardware-specific libraries
+try:
+    from board import SCL, SDA
+    import busio
+    from adafruit_pca9685 import PCA9685
+    HARDWARE_AVAILABLE = True
+except ImportError:
+    print("Hardware libraries not found - running in mock mode")
+    HARDWARE_AVAILABLE = False
+
 import time
 import json
-from board import SCL, SDA
-import busio
-from adafruit_pca9685 import PCA9685
-import config
+import backend.config as config
 import os
+
+class MockPCA9685Channel:
+    """Mock implementation of PCA9685 channel"""
+    def __init__(self):
+        self.duty_cycle = 0
+
+class MockPCA9685:
+    """Mock implementation of PCA9685"""
+    def __init__(self):
+        self.frequency = 50
+        self.channels = [MockPCA9685Channel() for _ in range(16)]
+    
+    def deinit(self):
+        pass
 
 class MultiServoController:
     """Handles multiple servo motors via PCA9685 PWM driver"""
@@ -15,22 +36,30 @@ class MultiServoController:
         self.servos = {}
         self.servo_configs = self.load_servo_configs()
         self.initialized = False
+        self.mock_mode = not HARDWARE_AVAILABLE
     
     def initialize(self):
         """Initialize I2C bus and PCA9685"""
         try:
-            # Create I2C bus
-            self.i2c = busio.I2C(SCL, SDA)
-            
-            # Create PCA9685 instance
-            self.pca = PCA9685(self.i2c)
-            self.pca.frequency = config.PWM_FREQUENCY
+            if self.mock_mode:
+                # Create mock PCA9685 instance
+                self.pca = MockPCA9685()
+                self.initialized = True
+                print("Multi-servo controller initialized in MOCK MODE")
+            else:
+                # Create I2C bus
+                self.i2c = busio.I2C(SCL, SDA)
+                
+                # Create PCA9685 instance
+                self.pca = PCA9685(self.i2c)
+                self.pca.frequency = config.PWM_FREQUENCY
+                
+                self.initialized = True
+                print(f"Multi-servo controller initialized with hardware")
             
             # Initialize enabled servos
             self._initialize_servos()
-            
-            self.initialized = True
-            print(f"Multi-servo controller initialized with {len(self.servos)} servos")
+            print(f"Initialized {len(self.servos)} servos")
             
         except Exception as e:
             print(f"Failed to initialize servo controller: {e}")
@@ -82,7 +111,11 @@ class MultiServoController:
         # Convert microseconds to duty cycle value
         duty_cycle = int(pulse_us / 20000 * 0xFFFF)
         channel.duty_cycle = duty_cycle
-    
+        
+        if self.mock_mode:
+            # Print mock output for debugging
+            print(f"MOCK: Setting pulse width to {pulse_us}μs (duty cycle: {duty_cycle})")
+
     def _set_servo_angle(self, servo_id, angle):
         """Internal method to set servo angle"""
         if servo_id not in self.servos:

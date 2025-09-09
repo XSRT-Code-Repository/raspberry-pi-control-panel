@@ -6,8 +6,8 @@ Run this file to start the development server with enhanced logging and auto-rel
 
 import os
 import sys
-from app import app, servo_controller, cleanup
-import config
+from frontend.app import app, servo_controller, cleanup
+import backend.config as config
 
 def print_banner():
     """Print startup banner"""
@@ -75,8 +75,11 @@ def check_dependencies():
         print("✅ Hardware libraries available")
         return True
     except ImportError as e:
-        print(f"❌ Missing hardware libraries: {e}")
-        print("💡 Install with: pip install -r requirements.txt")
+        print("⚠️  Hardware libraries not found - running in MOCK MODE")
+        print("💡 For hardware support install: pip install -r requirements.txt")
+        return "mock"
+    except Exception as e:
+        print(f"❌ Error checking dependencies: {e}")
         return False
 
 def main():
@@ -84,16 +87,24 @@ def main():
     print_banner()
     
     # Check dependencies
-    if not check_dependencies():
+    dep_status = check_dependencies()
+    if dep_status is False:  # Only exit if there's a real error
         sys.exit(1)
     
     try:
-        print("\n🔧 INITIALIZING HARDWARE...")
+        print("\n🔧 INITIALIZING SYSTEM...")
+        if dep_status == "mock":
+            print("⚠️  Running in MOCK MODE - No hardware control available")
+            print("💡 All servo operations will be simulated")
+        
         servo_controller.initialize()
-        print("✅ Hardware initialization complete")
+        print("✅ System initialization complete")
         
         print_servo_status()
         print_access_info()
+        
+        if dep_status == "mock":
+            print("\n⚠️  MOCK MODE ACTIVE - Hardware control disabled")
         
         print("\n🚀 STARTING WEB SERVER...")
         print("Press Ctrl+C to stop the server\n")
@@ -109,11 +120,12 @@ def main():
         
     except KeyboardInterrupt:
         print("\n\n🛑 SHUTDOWN REQUESTED")
-        print("Cleaning up hardware...")
+        print("Cleaning up system...")
         
     except Exception as e:
         print(f"\n❌ ERROR STARTING SERVER: {e}")
-        print("Check your hardware connections and try again")
+        if dep_status != "mock":
+            print("Check your hardware connections and try again")
         
     finally:
         cleanup()

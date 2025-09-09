@@ -6,7 +6,7 @@ Run this file to start the development server with enhanced logging and auto-rel
 
 import os
 import sys
-from frontend.app import app, servo_controller, cleanup
+from frontend import app, servo_controller, cleanup
 import backend.config as config
 
 def print_banner():

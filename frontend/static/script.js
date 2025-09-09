@@ -87,54 +87,7 @@ function renderServoControls() {
 // Assumes ServoCard.js is loaded before script.js or via a module system
 // If using ES modules, use: import { createServoCard } from './ServoCard.js';
 
-/**
- * Update servo angle from slider
- */
-function updateServoAngle(servoId, angle) {
-    document.getElementById(`pos-${servoId}`).textContent = angle + '°';
-    
-    // Debounce rapid updates
-    clearTimeout(window[`timeout_${servoId}`]);
-    window[`timeout_${servoId}`] = setTimeout(() => {
-        setServoAngle(servoId, angle, false);
-    }, 150);
-}
 
-/**
- * Set servo to specific angle
- */
-function setServoAngle(servoId, angle, updateSlider = true) {
-    if (isAnyServoMoving) return;
-    
-    setServoStatus(servoId, `Moving to ${angle}°...`, 'default');
-    addPulseAnimation(servoId);
-    
-    if (updateSlider) {
-        document.getElementById(`slider-${servoId}`).value = angle;
-        document.getElementById(`pos-${servoId}`).textContent = angle + '°';
-    }
-    
-    return fetch(`/api/servos/${servoId}/angle`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({angle: parseInt(angle)})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            setServoStatus(servoId, `Position: ${data.angle}°`, 'success');
-            servos[servoId].current_position = data.angle;
-            return data;
-        } else {
-            setServoStatus(servoId, 'Error: ' + data.error, 'error');
-            throw new Error(data.error);
-        }
-    })
-    .catch(error => {
-        setServoStatus(servoId, 'Connection error', 'error');
-        console.error('Error:', error);
-    });
-}
 
 /**
  * Sweep a specific servo

@@ -150,6 +150,16 @@
                         </label>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-servo-open-angle">Open Angle:</label>
+                        <input type="number" id="edit-servo-open-angle" min="0" max="180">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-servo-close-angle">Close Angle:</label>
+                        <input type="number" id="edit-servo-close-angle" min="0" max="180">
+                    </div>
+                </div>
                 
                 <div class="modal-actions">
                     <button type="button" onclick="closeEditModal()" class="cancel-btn">Cancel</button>
@@ -161,5 +171,6 @@
 
     <script src="static/ServoCard.js"></script>
     <script src="static/script.js"></script>
+    <script src="static/ServoEdit.js"></script>
 </body>
 </html>

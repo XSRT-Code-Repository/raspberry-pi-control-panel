@@ -88,7 +88,7 @@ class MultiServoController:
         return self.initialized and self.pca is not None
     
     def get_servo_list(self):
-        """Get list of all configured servos"""
+        """Get list of all configured servos, including open/close angles if present"""
         return [
             {
                 'id': servo_id,
@@ -97,10 +97,27 @@ class MultiServoController:
                 'enabled': config.get('enabled', False),
                 'current_position': self.servos.get(servo_id, {}).get('current_position', config['default_angle']),
                 'min_angle': config['min_angle'],
-                'max_angle': config['max_angle']
+                'max_angle': config['max_angle'],
+                'open_angle': config.get('open_angle', config['max_angle']),
+                'close_angle': config.get('close_angle', config['min_angle'])
             }
             for servo_id, config in self.servo_configs.items()
         ]
+    def open_servo(self, servo_id):
+        """Move servo to its open position (open_angle or max_angle)"""
+        config = self.servo_configs.get(servo_id)
+        if not config:
+            return False, "Servo not found"
+        angle = config.get('open_angle', config['max_angle'])
+        return self.set_angle(servo_id, angle)
+
+    def close_servo(self, servo_id):
+        """Move servo to its close position (close_angle or min_angle)"""
+        config = self.servo_configs.get(servo_id)
+        if not config:
+            return False, "Servo not found"
+        angle = config.get('close_angle', config['min_angle'])
+        return self.set_angle(servo_id, angle)
     
     def _set_servo_pulse(self, channel, pulse_us):
         """Set servo pulse width in microseconds"""

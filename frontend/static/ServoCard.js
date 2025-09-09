@@ -40,6 +40,42 @@ function setServoAngle(servoId, angle, updateSlider = true) {
 }
 
 /**
+ * Sweep a specific servo
+ */
+function sweepServo(servoId) {
+    if (isAnyServoMoving) {
+        setServoStatus(servoId, 'Please wait for current movement', 'error');
+        return;
+    }
+    
+    isAnyServoMoving = true;
+    setServoStatus(servoId, 'Sweeping...', 'default');
+    
+    fetch(`/api/servos/${servoId}/sweep`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({step: 15, delay: 0.05})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            setServoStatus(servoId, 'Sweep complete', 'success');
+            // Update position after sweep
+            setTimeout(() => updateServoPosition(servoId), 500);
+        } else {
+            setServoStatus(servoId, 'Sweep failed: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        setServoStatus(servoId, 'Sweep error', 'error');
+        console.error('Sweep error:', error);
+    })
+    .finally(() => {
+        isAnyServoMoving = false;
+    });
+}
+
+/**
  * Update servo angle from slider
  */
 function updateServoAngle(servoId, angle) {
@@ -106,6 +142,8 @@ function createServoCard(servo) {
         </div>
         
         <div class="servo-actions">
+            <button onclick="setServoAngle('${servo.id}', ${servo.open_angle})" ${!servo.enabled ? 'disabled' : ''} title="Open Valve">🟢 Open</button>
+            <button onclick="setServoAngle('${servo.id}', ${servo.close_angle})" ${!servo.enabled ? 'disabled' : ''} title="Close Valve">🔴 Close</button>
             <button class="sweep-btn" onclick="sweepServo('${servo.id}')" ${!servo.enabled ? 'disabled' : ''}>🔄 Sweep</button>
             <button class="secondary" onclick="openEditModal('${servo.id}')" title="Edit Configuration">⚙️</button>
         </div>

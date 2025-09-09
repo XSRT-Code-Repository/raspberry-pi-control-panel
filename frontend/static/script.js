@@ -83,48 +83,6 @@ function renderServoControls() {
     }
 }
 
-// Import ServoCard component
-// Assumes ServoCard.js is loaded before script.js or via a module system
-// If using ES modules, use: import { createServoCard } from './ServoCard.js';
-
-
-
-/**
- * Sweep a specific servo
- */
-function sweepServo(servoId) {
-    if (isAnyServoMoving) {
-        setServoStatus(servoId, 'Please wait for current movement', 'error');
-        return;
-    }
-    
-    isAnyServoMoving = true;
-    setServoStatus(servoId, 'Sweeping...', 'default');
-    
-    fetch(`/api/servos/${servoId}/sweep`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({step: 15, delay: 0.05})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            setServoStatus(servoId, 'Sweep complete', 'success');
-            // Update position after sweep
-            setTimeout(() => updateServoPosition(servoId), 500);
-        } else {
-            setServoStatus(servoId, 'Sweep failed: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        setServoStatus(servoId, 'Sweep error', 'error');
-        console.error('Sweep error:', error);
-    })
-    .finally(() => {
-        isAnyServoMoving = false;
-    });
-}
-
 /**
  * Center all servos
  */
@@ -202,73 +160,6 @@ function addNewServo() {
     .catch(error => {
         showGlobalStatus('Add servo error', 'error');
         console.error('Add servo error:', error);
-    });
-}
-
-/**
- * Open edit modal for servo
- */
-function openEditModal(servoId) {
-    const servo = servos[servoId];
-    if (!servo) return;
-    
-    // Populate form
-    document.getElementById('edit-servo-id').value = servoId;
-    document.getElementById('edit-servo-name').value = servo.name;
-    document.getElementById('edit-servo-channel').value = servo.channel;
-    document.getElementById('edit-servo-min-angle').value = servo.min_angle;
-    document.getElementById('edit-servo-max-angle').value = servo.max_angle;
-    document.getElementById('edit-servo-min-pulse').value = servo.min_pulse_us || 500;
-    document.getElementById('edit-servo-max-pulse').value = servo.max_pulse_us || 2500;
-    document.getElementById('edit-servo-default').value = servo.default_angle || 90;
-    document.getElementById('edit-servo-enabled').checked = servo.enabled;
-    
-    // Show modal
-    document.getElementById('edit-modal').classList.remove('hidden');
-}
-
-/**
- * Close edit modal
- */
-function closeEditModal() {
-    document.getElementById('edit-modal').classList.add('hidden');
-}
-
-/**
- * Save servo edit
- */
-function saveServoEdit() {
-    const servoId = document.getElementById('edit-servo-id').value;
-    
-    const updatedConfig = {
-        name: document.getElementById('edit-servo-name').value,
-        channel: parseInt(document.getElementById('edit-servo-channel').value),
-        min_angle: parseInt(document.getElementById('edit-servo-min-angle').value),
-        max_angle: parseInt(document.getElementById('edit-servo-max-angle').value),
-        min_pulse_us: parseInt(document.getElementById('edit-servo-min-pulse').value),
-        max_pulse_us: parseInt(document.getElementById('edit-servo-max-pulse').value),
-        default_angle: parseInt(document.getElementById('edit-servo-default').value),
-        enabled: document.getElementById('edit-servo-enabled').checked
-    };
-    
-    fetch(`/api/servos/${servoId}`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(updatedConfig)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showGlobalStatus('Servo updated successfully', 'success');
-            closeEditModal();
-            loadServos(); // Reload to show changes
-        } else {
-            showGlobalStatus('Failed to update servo: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        showGlobalStatus('Update servo error', 'error');
-        console.error('Update servo error:', error);
     });
 }
 

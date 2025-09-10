@@ -74,13 +74,10 @@ def check_dependencies():
         import adafruit_pca9685
         print("✅ Hardware libraries available")
         return True
-    except ImportError as e:
+    except:
         print("⚠️  Hardware libraries not found - running in MOCK MODE")
         print("💡 For hardware support install: pip install -r requirements.txt")
         return "mock"
-    except Exception as e:
-        print(f"❌ Error checking dependencies: {e}")
-        return False
 
 def main():
     """Main entry point"""

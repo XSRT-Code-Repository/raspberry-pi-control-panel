@@ -4,7 +4,7 @@ try:
     import busio
     from adafruit_pca9685 import PCA9685
     HARDWARE_AVAILABLE = True
-except ImportError:
+except:
     print("Hardware libraries not found - running in mock mode")
     HARDWARE_AVAILABLE = False
 

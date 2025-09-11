@@ -64,14 +64,10 @@ function loadServos() {
 function renderServoControls() {
     const container = document.getElementById('servo-controls');
     container.innerHTML = '';
-    
     Object.values(servos).forEach(servo => {
-        if (servo.enabled) {
-            const servoCard = createServoCard(servo);
-            container.appendChild(servoCard);
-        }
+        const servoCard = createServoCard(servo);
+        container.appendChild(servoCard);
     });
-    
     if (container.children.length === 0) {
         container.innerHTML = `
             <div class="no-servos">
@@ -191,7 +187,6 @@ function deleteServo(servoId) {
 function loadServoConfigList() {
     const container = document.getElementById('servo-config-list');
     container.innerHTML = '';
-    
     Object.entries(servos).forEach(([servoId, servo]) => {
         const item = document.createElement('div');
         item.className = 'servo-config-item';
@@ -199,7 +194,7 @@ function loadServoConfigList() {
             <div class="servo-config-info">
                 <div class="servo-config-name">${servo.name}</div>
                 <div class="servo-config-details">
-                    Channel ${servo.channel} | Open: ${servo.close_angle}° | Close: ${servo.open_angle}°
+                    Channel ${servo.channel} | Open: ${servo.open_angle}° | Close: ${servo.close_angle}°
                 </div>
             </div>
             <div class="servo-config-actions">
@@ -299,7 +294,7 @@ function updateConnectionStatus() {
  * Update servo count display
  */
 function updateServoCount(activeCount = null) {
-    const count = activeCount !== null ? activeCount : Object.values(servos).filter(s => s.enabled).length;
+    const count = activeCount !== null ? activeCount : Object.keys(servos).length;
     document.getElementById('servo-count').textContent = `${count} servo${count !== 1 ? 's' : ''} active`;
 }
 

@@ -71,7 +71,7 @@ function incrementServoAngle(servoId, delta) {
 
 function createServoCard(servo) {
     const card = document.createElement('div');
-    card.className = `servo-card ${!servo.enabled ? 'disabled' : ''}`;
+    card.className = 'servo-card';
     card.style.maxWidth = '340px';
     card.style.width = '100%';
     card.innerHTML = `

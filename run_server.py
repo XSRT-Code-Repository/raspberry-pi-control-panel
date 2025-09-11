@@ -32,9 +32,8 @@ def print_servo_status():
         return
     
     for servo in servos:
-        status = "✅ ENABLED" if servo['enabled'] else "⚠️  DISABLED"
-        print(f"• {servo['name']:<15} | Ch{servo['channel']:<2} | {status}")
-        print(f"  Range: {servo['min_angle']}-{servo['max_angle']}° | Pos: {servo['current_position']}°")
+        print(f"• {servo['name']:<15} | Ch{servo['channel']:<2}")
+        print(f"  Open: {servo['open_angle']}° | Close: {servo['close_angle']}° | Default: {servo.get('default_angle', 'N/A')}° | Pos: {servo['current_position']}°")
     
     print("-" * 40)
 

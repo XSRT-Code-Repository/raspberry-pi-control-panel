@@ -38,40 +38,22 @@
                             <input type="number" id="new-servo-channel" min="0" max="15" required>
                         </div>
                     </div>
-                    
+                                    
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="new-servo-min-angle">Min Angle:</label>
-                            <input type="number" id="new-servo-min-angle" value="0" min="0" max="180">
+                            <label for="new-servo-open-angle">Open Angle:</label>
+                            <input type="number" id="new-servo-open-angle" min="0" max="180">
                         </div>
                         <div class="form-group">
-                            <label for="new-servo-max-angle">Max Angle:</label>
-                            <input type="number" id="new-servo-max-angle" value="180" min="0" max="180">
+                            <label for="new-servo-close-angle">Close Angle:</label>
+                            <input type="number" id="new-servo-close-angle" min="0" max="180">
                         </div>
                     </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="new-servo-min-pulse">Min Pulse (μs):</label>
-                            <input type="number" id="new-servo-min-pulse" value="500" min="100" max="3000">
-                        </div>
-                        <div class="form-group">
-                            <label for="new-servo-max-pulse">Max Pulse (μs):</label>
-                            <input type="number" id="new-servo-max-pulse" value="2500" min="100" max="3000">
-                        </div>
-                    </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="new-servo-default">Default Angle:</label>
                             <input type="number" id="new-servo-default" value="90" min="0" max="180">
-                        </div>
-                        <div class="form-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="new-servo-enabled" checked>
-                                <span class="checkmark"></span>
-                                Enable Servo
-                            </label>
                         </div>
                     </div>
                     
@@ -117,41 +99,6 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="edit-servo-min-angle">Min Angle:</label>
-                        <input type="number" id="edit-servo-min-angle" min="0" max="180">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-servo-max-angle">Max Angle:</label>
-                        <input type="number" id="edit-servo-max-angle" min="0" max="180">
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-servo-min-pulse">Min Pulse (μs):</label>
-                        <input type="number" id="edit-servo-min-pulse" min="100" max="3000">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-servo-max-pulse">Max Pulse (μs):</label>
-                        <input type="number" id="edit-servo-max-pulse" min="100" max="3000">
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-servo-default">Default Angle:</label>
-                        <input type="number" id="edit-servo-default" min="0" max="180">
-                    </div>
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="edit-servo-enabled">
-                            <span class="checkmark"></span>
-                            Enable Servo
-                        </label>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
                         <label for="edit-servo-open-angle">Open Angle:</label>
                         <input type="number" id="edit-servo-open-angle" min="0" max="180">
                     </div>
@@ -160,7 +107,14 @@
                         <input type="number" id="edit-servo-close-angle" min="0" max="180">
                     </div>
                 </div>
-                
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-servo-default">Default Angle:</label>
+                        <input type="number" id="edit-servo-default" min="0" max="180">
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button type="button" onclick="closeEditModal()" class="cancel-btn">Cancel</button>
                     <button type="submit" class="save-btn">💾 Save Changes</button>

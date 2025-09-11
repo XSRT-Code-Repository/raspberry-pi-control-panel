@@ -126,7 +126,6 @@ function centerAllServos() {
  */
 function addNewServo() {
     const form = document.getElementById('add-servo-form');
-    const formData = new FormData(form);
     
     // Generate unique servo ID
     const servoId = 'servo_' + Date.now();
@@ -134,12 +133,9 @@ function addNewServo() {
     const servoConfig = {
         name: document.getElementById('new-servo-name').value,
         channel: parseInt(document.getElementById('new-servo-channel').value),
-        min_angle: parseInt(document.getElementById('new-servo-min-angle').value),
-        max_angle: parseInt(document.getElementById('new-servo-max-angle').value),
-        min_pulse_us: parseInt(document.getElementById('new-servo-min-pulse').value),
-        max_pulse_us: parseInt(document.getElementById('new-servo-max-pulse').value),
-        default_angle: parseInt(document.getElementById('new-servo-default').value),
-        enabled: document.getElementById('new-servo-enabled').checked
+        open_angle: parseInt(document.getElementById('new-servo-open-angle').value),
+        close_angle: parseInt(document.getElementById('new-servo-close-angle').value),
+        default_angle: parseInt(document.getElementById('new-servo-default').value)
     };
     
     fetch('/api/servos', {
@@ -201,10 +197,9 @@ function loadServoConfigList() {
         item.className = 'servo-config-item';
         item.innerHTML = `
             <div class="servo-config-info">
-                <div class="servo-config-name">${servo.name} ${!servo.enabled ? '(Disabled)' : ''}</div>
+                <div class="servo-config-name">${servo.name}</div>
                 <div class="servo-config-details">
-                    Channel ${servo.channel} | ${servo.min_angle}°-${servo.max_angle}° | 
-                    ${servo.min_pulse_us || 500}-${servo.max_pulse_us || 2500}μs
+                    Channel ${servo.channel} | Open: ${servo.close_angle}° | Close: ${servo.open_angle}°
                 </div>
             </div>
             <div class="servo-config-actions">

@@ -69,19 +69,18 @@ class MultiServoController:
     def _initialize_servos(self):
         """Initialize individual servos based on configuration"""
         for servo_id, servo_config in self.servo_configs.items():
-            if servo_config.get('enabled', False):
-                try:
-                    channel = self.pca.channels[servo_config['channel']]
-                    self.servos[servo_id] = {
-                        'channel': channel,
-                        'config': servo_config,
-                        'current_position': servo_config['default_angle']
-                    }
-                    # Set to default position
-                    self._set_servo_angle(servo_id, servo_config['default_angle'])
-                    print(f"Initialized {servo_config['name']} on channel {servo_config['channel']}")
-                except Exception as e:
-                    print(f"Failed to initialize servo {servo_id}: {e}")
+            try:
+                channel = self.pca.channels[servo_config['channel']]
+                self.servos[servo_id] = {
+                    'channel': channel,
+                    'config': servo_config,
+                    'current_position': servo_config['default_angle']
+                }
+                # Set to default position
+                self._set_servo_angle(servo_id, servo_config['default_angle'])
+                print(f"Initialized {servo_config['name']} on channel {servo_config['channel']}")
+            except Exception as e:
+                print(f"Failed to initialize servo {servo_id}: {e}")
     
     def is_connected(self):
         """Check if servo controller is properly connected"""
@@ -94,29 +93,26 @@ class MultiServoController:
                 'id': servo_id,
                 'name': config['name'],
                 'channel': config['channel'],
-                'enabled': config.get('enabled', False),
                 'current_position': self.servos.get(servo_id, {}).get('current_position', config['default_angle']),
-                'min_angle': config['min_angle'],
-                'max_angle': config['max_angle'],
-                'open_angle': config.get('open_angle', config['max_angle']),
-                'close_angle': config.get('close_angle', config['min_angle'])
+                'open_angle': config.get('open_angle'),
+                'close_angle': config.get('close_angle')
             }
             for servo_id, config in self.servo_configs.items()
         ]
     def open_servo(self, servo_id):
-        """Move servo to its open position (open_angle or max_angle)"""
+        """Move servo to its open position (open_angle)"""
         config = self.servo_configs.get(servo_id)
         if not config:
             return False, "Servo not found"
-        angle = config.get('open_angle', config['max_angle'])
+        angle = config.get('open_angle')
         return self.set_angle(servo_id, angle)
 
     def close_servo(self, servo_id):
-        """Move servo to its close position (close_angle or min_angle)"""
+        """Move servo to its close position (close_angle)"""
         config = self.servo_configs.get(servo_id)
         if not config:
             return False, "Servo not found"
-        angle = config.get('close_angle', config['min_angle'])
+        angle = config.get('close_angle')
         return self.set_angle(servo_id, angle)
     
     def _set_servo_pulse(self, channel, pulse_us):
@@ -137,26 +133,17 @@ class MultiServoController:
         """Internal method to set servo angle"""
         if servo_id not in self.servos:
             raise ValueError(f"Servo {servo_id} not found or not enabled")
-        
         servo = self.servos[servo_id]
         servo_config = servo['config']
-        
-        # Validate angle range
-        min_angle = servo_config['min_angle']
-        max_angle = servo_config['max_angle']
-        angle = max(min_angle, min(max_angle, int(angle)))
-        
-        # Convert angle to pulse width
-        pulse_range = servo_config['max_pulse_us'] - servo_config['min_pulse_us']
-        normalized_angle = angle / 180 # TODO: support for 270 and 360 degree servos
-        pulse_us = servo_config['min_pulse_us'] + normalized_angle * pulse_range
-        
-        # Set the servo pulse
+        angle = int(angle)
+        # Use open_angle and close_angle for bounds
+        min_angle = servo_config.get('close_angle', 0)
+        max_angle = servo_config.get('open_angle', 180)
+        angle = max(min_angle, min(max_angle, angle))
+        # Convert angle to pulse width (simple mapping: 0deg=500us, 180deg=2500us)
+        pulse_us = 500 + (angle / 180) * (2500 - 500)
         self._set_servo_pulse(servo['channel'], pulse_us)
-        
-        # Update current position
         servo['current_position'] = angle
-        
         return angle
     
     def set_angle(self, servo_id, angle):
@@ -188,39 +175,29 @@ class MultiServoController:
     def add_servo(self, servo_id, servo_config):
         """Add a new servo configuration"""
         try:
-            # Validate configuration
-            required_fields = ['name', 'channel', 'min_angle', 'max_angle', 'min_pulse_us', 'max_pulse_us', 'default_angle']
+            print(servo_config)
+            required_fields = ['name', 'channel', 'open_angle', 'close_angle', 'default_angle']
             for field in required_fields:
                 if field not in servo_config:
                     raise ValueError(f"Missing required field: {field}")
-            
-            # Check channel availability
             channel = servo_config['channel']
             if channel < 0 or channel >= 16:
                 raise ValueError("Channel must be between 0 and 15")
-            
-            # Check if channel is already in use
             for existing_id, existing_config in self.servo_configs.items():
-                if existing_config['channel'] == channel and existing_config.get('enabled', False):
+                if existing_config['channel'] == channel:
                     if existing_id != servo_id:
                         raise ValueError(f"Channel {channel} already in use by {existing_config['name']}")
-            
-            # Add to configuration
-            self.servo_configs[servo_id] = servo_config
-            
-            # Initialize if enabled
-            if servo_config.get('enabled', False) and self.initialized:
+            self.servo_configs[servo_id] = {k: servo_config[k] for k in required_fields}
+            if self.initialized:
                 channel_obj = self.pca.channels[channel]
                 self.servos[servo_id] = {
                     'channel': channel_obj,
-                    'config': servo_config,
+                    'config': self.servo_configs[servo_id],
                     'current_position': servo_config['default_angle']
                 }
                 self._set_servo_angle(servo_id, servo_config['default_angle'])
-            
             self.save_servo_configs()
             return True, "Servo added successfully"
-            
         except Exception as e:
             return False, str(e)
     
@@ -229,7 +206,7 @@ class MultiServoController:
         try:
             if servo_id in self.servos:
                 # Move to safe position before removing
-                self._set_servo_angle(servo_id, config.SAFE_SHUTDOWN_ANGLE)
+                self._set_servo_angle(servo_id, self.servo_configs[servo_id].get('default_angle', config.SAFE_SHUTDOWN_ANGLE))
                 del self.servos[servo_id]
             
             if servo_id in self.servo_configs:
@@ -246,30 +223,21 @@ class MultiServoController:
         try:
             if servo_id not in self.servo_configs:
                 return False, "Servo not found"
-            
-            # Update configuration
-            self.servo_configs[servo_id].update(new_config)
-            
-            # Re-initialize if enabled
-            if new_config.get('enabled', False):
-                if servo_id in self.servos:
-                    del self.servos[servo_id]
-                
-                channel_obj = self.pca.channels[new_config['channel']]
-                self.servos[servo_id] = {
-                    'channel': channel_obj,
-                    'config': self.servo_configs[servo_id],
-                    'current_position': new_config.get('default_angle', 90)
-                }
-                self._set_servo_angle(servo_id, new_config.get('default_angle', 90))
-            else:
-                # Disable servo
-                if servo_id in self.servos:
-                    del self.servos[servo_id]
-            
+            allowed_fields = ['name', 'channel', 'open_angle', 'close_angle', 'default_angle']
+            filtered_config = {k: v for k, v in new_config.items() if k in allowed_fields}
+            self.servo_configs[servo_id].update(filtered_config)
+            # Always re-initialize after update
+            if servo_id in self.servos:
+                del self.servos[servo_id]
+            channel_obj = self.pca.channels[self.servo_configs[servo_id]['channel']]
+            self.servos[servo_id] = {
+                'channel': channel_obj,
+                'config': self.servo_configs[servo_id],
+                'current_position': self.servo_configs[servo_id].get('default_angle', 90)
+            }
+            self._set_servo_angle(servo_id, self.servo_configs[servo_id].get('default_angle', 90))
             self.save_servo_configs()
             return True, "Servo configuration updated"
-            
         except Exception as e:
             return False, str(e)
 
@@ -284,45 +252,6 @@ class MultiServoController:
         """Save servo configurations to JSON file"""
         with open(config.SERVO_CONFIG_FILE, 'w') as f:
             json.dump(self.servo_configs, f, indent=4)
-    
-    def center_all(self):
-        """Move all servos to their center positions"""
-        results = {}
-        for servo_id in self.servos:
-            servo_config = self.servo_configs[servo_id]
-            center_angle = (servo_config['min_angle'] + servo_config['max_angle']) // 2
-            success, angle = self.set_angle(servo_id, center_angle)
-            results[servo_id] = {'success': success, 'angle': angle}
-        return results
-    
-    def sweep_servo(self, servo_id, start_angle=None, end_angle=None, step=10, delay=0.1):
-        """
-        Perform a sweep motion for a specific servo
-        """
-        try:
-            if servo_id not in self.servos:
-                return False, "Servo not found or not enabled"
-            
-            servo_config = self.servo_configs[servo_id]
-            
-            if start_angle is None:
-                start_angle = servo_config['min_angle']
-            if end_angle is None:
-                end_angle = servo_config['max_angle']
-            
-            if start_angle <= end_angle:
-                angles = range(start_angle, end_angle + 1, step)
-            else:
-                angles = range(start_angle, end_angle - 1, -step)
-            
-            for angle in angles:
-                self.set_angle(servo_id, angle)
-                time.sleep(delay)
-            
-            return True, "Sweep completed"
-                
-        except Exception as e:
-            return False, str(e)
     
     def cleanup(self):
         """Clean up resources and deinitialize hardware"""

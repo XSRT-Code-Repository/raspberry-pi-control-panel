@@ -1,36 +1,9 @@
 {
-    "servo_0": {
-        "name": "Fill",
+    "servo_1757565878324": {
+        "name": "hello",
         "channel": 0,
-        "min_angle": 90,
-        "max_angle": 180,
-        "min_pulse_us": 500,
-        "max_pulse_us": 2500,
-        "default_angle": 90,
+        "open_angle": 180,
         "close_angle": 90,
-        "open_angle": 150,
-        "enabled": true
-    },
-    "servo_1756895997294": {
-        "name": "Drain",
-        "channel": 15,
-        "min_angle": 0,
-        "max_angle": 180,
-        "min_pulse_us": 500,
-        "max_pulse_us": 2500,
-        "default_angle": 90,
-        "enabled": true,
-        "open_angle": 55,
-        "close_angle": 0
-    },
-    "servo_1756897604436": {
-        "name": "Tank",
-        "channel": 13,
-        "min_angle": 0,
-        "max_angle": 180,
-        "min_pulse_us": 500,
-        "max_pulse_us": 2500,
-        "default_angle": 90,
-        "enabled": true
+        "default_angle": 90
     }
 }

@@ -40,42 +40,6 @@ function setServoAngle(servoId, angle, updateSlider = true) {
 }
 
 /**
- * Sweep a specific servo
- */
-function sweepServo(servoId) {
-    if (isAnyServoMoving) {
-        setServoStatus(servoId, 'Please wait for current movement', 'error');
-        return;
-    }
-    
-    isAnyServoMoving = true;
-    setServoStatus(servoId, 'Sweeping...', 'default');
-    
-    fetch(`/api/servos/${servoId}/sweep`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({step: 15, delay: 0.05})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            setServoStatus(servoId, 'Sweep complete', 'success');
-            // Update position after sweep
-            setTimeout(() => updateServoPosition(servoId), 500);
-        } else {
-            setServoStatus(servoId, 'Sweep failed: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        setServoStatus(servoId, 'Sweep error', 'error');
-        console.error('Sweep error:', error);
-    })
-    .finally(() => {
-        isAnyServoMoving = false;
-    });
-}
-
-/**
  * Update servo angle from slider
  */
 function updateServoAngle(servoId, angle) {
@@ -108,6 +72,8 @@ function incrementServoAngle(servoId, delta) {
 function createServoCard(servo) {
     const card = document.createElement('div');
     card.className = `servo-card ${!servo.enabled ? 'disabled' : ''}`;
+    card.style.maxWidth = '340px';
+    card.style.width = '100%';
     card.innerHTML = `
         <div class="servo-header">
             <div class="servo-title">${servo.name}</div>
@@ -119,32 +85,24 @@ function createServoCard(servo) {
         </div>
         
         <div class="control-group">
-            <label for="slider-${servo.id}">Angle (${servo.min_angle}° - ${servo.max_angle}°):</label>
+            <label for="slider-${servo.id}">Angle (${servo.close_angle}° - ${servo.open_angle}°):</label>
             <input type="range" 
-                   min="${servo.min_angle}" 
-                   max="${servo.max_angle}" 
+                   min="${servo.close_angle}" 
+                   max="${servo.open_angle}" 
                    value="${servo.current_position}" 
                    class="slider" 
                    id="slider-${servo.id}" 
-                   oninput="updateServoAngle('${servo.id}', this.value)"
-                   ${!servo.enabled ? 'disabled' : ''}>
+                   oninput="updateServoAngle('${servo.id}', this.value)">
         </div>
 
         <div class="button-group">
-            <button onclick="incrementServoAngle('${servo.id}', 1)" ${!servo.enabled ? 'disabled' : ''}>+1°</button>
-            <button onclick="incrementServoAngle('${servo.id}', -1)" ${!servo.enabled ? 'disabled' : ''}>-1°</button>
+            <button onclick="incrementServoAngle('${servo.id}', 1)">+1°</button>
+            <button onclick="incrementServoAngle('${servo.id}', -1)">-1°</button>
         </div>
         
         <div class="button-group">
-            <button onclick="setServoAngle('${servo.id}', ${servo.min_angle})" ${!servo.enabled ? 'disabled' : ''}>${servo.min_angle}°</button>
-            <button onclick="setServoAngle('${servo.id}', ${Math.round((servo.min_angle + servo.max_angle) / 2)})" ${!servo.enabled ? 'disabled' : ''}>Center</button>
-            <button onclick="setServoAngle('${servo.id}', ${servo.max_angle})" ${!servo.enabled ? 'disabled' : ''}>${servo.max_angle}°</button>
-        </div>
-        
-        <div class="servo-actions">
-            <button onclick="setServoAngle('${servo.id}', ${servo.open_angle})" ${!servo.enabled ? 'disabled' : ''} title="Open Valve">🟢 Open</button>
-            <button onclick="setServoAngle('${servo.id}', ${servo.close_angle})" ${!servo.enabled ? 'disabled' : ''} title="Close Valve">🔴 Close</button>
-            <button class="sweep-btn" onclick="sweepServo('${servo.id}')" ${!servo.enabled ? 'disabled' : ''}>🔄 Sweep</button>
+            <button onclick="setServoAngle('${servo.id}', ${servo.open_angle})" title="Open Valve">🟢 Open</button>
+            <button onclick="setServoAngle('${servo.id}', ${servo.close_angle})" title="Close Valve">🔴 Close</button>
             <button class="secondary" onclick="openEditModal('${servo.id}')" title="Edit Configuration">⚙️</button>
         </div>
         

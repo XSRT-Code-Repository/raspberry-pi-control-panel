@@ -1,9 +1,10 @@
 from flask import jsonify, request, render_template
 
+import backend.servo_controller as servo_controller
 import backend.config as config
 
 class Route:
-    def __init__(self, app, servo_controller):
+    def __init__(self, app, servo_controller: servo_controller):
         self.app = app
         self.servo_controller = servo_controller
         self.register_routes()

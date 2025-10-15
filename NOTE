@@ -1,7 +1,12 @@
+## TODO
 - Servo minimum open/close time
 - move every servo to safe position
 - adjust servo with +1 -1 button
 - implement open/close position
+- connect notebook and rpi with lan cable
+- sensor reading panel
+- python API
+- webcam streaming
 
 ## workflow
 

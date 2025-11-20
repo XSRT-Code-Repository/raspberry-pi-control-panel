@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_socketio import SocketIO
 import backend.config as config
 from backend.servo_controller import MultiServoController
 from frontend.route import Route
@@ -6,11 +7,14 @@ from frontend.route import Route
 # Initialize Flask app
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*")
+
 # Initialize servo controller
 servo_controller = MultiServoController()
 
-# Pass app to Route class to register all routes
-Route(app, servo_controller)
+# Pass app and socketio to Route class to register all routes and socket events
+Route(app, servo_controller, socketio)
 
 def cleanup():
     """Clean up resources"""
@@ -23,7 +27,7 @@ if __name__ == '__main__':
         servo_controller.initialize()
         print(f"Starting web server on {config.HOST}:{config.PORT}")
         print(f"Open your browser and go to: http://{config.HOST}:{config.PORT}")
-        app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
+        socketio.run(app, host=config.HOST, port=config.PORT, debug=config.DEBUG)
     except KeyboardInterrupt:
         print("\nShutting down...")
     except Exception as e:

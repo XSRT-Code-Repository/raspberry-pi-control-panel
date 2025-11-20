@@ -6,7 +6,7 @@ Run this file to start the development server with enhanced logging and auto-rel
 
 import os
 import sys
-from frontend import app, servo_controller, cleanup
+from frontend import app, socketio, servo_controller, cleanup
 import backend.config as config
 
 def print_banner():
@@ -106,13 +106,12 @@ def main():
         print("\n🚀 STARTING WEB SERVER...")
         print("Press Ctrl+C to stop the server\n")
         
-        # Start the Flask development server
-        app.run(
+        # Start the Flask-SocketIO development server
+        socketio.run(
+            app,
             host=config.HOST,
             port=config.PORT,
-            debug=config.DEBUG,
-            use_reloader=False,  # Disable reloader to avoid hardware conflicts
-            threaded=True
+            debug=config.DEBUG
         )
         
     except KeyboardInterrupt:

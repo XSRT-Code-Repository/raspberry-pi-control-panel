@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webcam Stream - XSRT Test Bench</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Webcam Stream</h1>
+            <div class="header-controls">
+                <a href="/" class="header-btn">← Back to Control Panel</a>
+                <button id="toggle-stream" class="header-btn">▶️ Start Stream</button>
+                <button id="refresh-stream" class="header-btn secondary">🔄 Refresh</button>
+            </div>
+        </header>
+
+        <div class="webcam-container">
+            <div id="stream-status" class="status-message">
+                <p>🔌 Connecting to stream server...</p>
+            </div>
+            <img id="video-stream" src="" width="100%" alt="Webcam Stream" style="display: none;">
+        </div>
+
+        <div class="webcam-info">
+            <h3>Stream Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Status:</strong> <span id="status-text">Disconnected</span>
+                </div>
+                <div class="info-item">
+                    <strong>Resolution:</strong> <span id="resolution-text">640x480</span>
+                </div>
+                <div class="info-item">
+                    <strong>Frame Rate:</strong> <span id="fps-text">~30 FPS</span>
+                </div>
+                <div class="info-item">
+                    <strong>Connection:</strong> <span id="connection-text">WebSocket</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const videoStream = document.getElementById('video-stream');
+        const streamStatus = document.getElementById('stream-status');
+        const statusText = document.getElementById('status-text');
+        const toggleBtn = document.getElementById('toggle-stream');
+        const refreshBtn = document.getElementById('refresh-stream');
+
+        let socket;
+        let isStreaming = false;
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+
+        function initSocket() {
+            socket = io('/webcam');
+
+            socket.on('connect', function() {
+                console.log('Connected to WebSocket');
+                statusText.textContent = 'Connected';
+                streamStatus.innerHTML = '<p>✅ Connected! Click "Start Stream" to begin.</p>';
+            });
+
+            socket.on('disconnect', function() {
+                console.log('Disconnected from WebSocket');
+                statusText.textContent = 'Disconnected';
+                streamStatus.innerHTML = '<p>🔌 Connection lost. Attempting to reconnect...</p>';
+                videoStream.style.display = 'none';
+                toggleBtn.innerHTML = '▶️ Start Stream';
+                toggleBtn.disabled = true;
+                isStreaming = false;
+                setTimeout(initSocket, 2000);
+            });
+
+            socket.on('status', function(data) {
+                console.log('Status:', data.message);
+                if (data.message === 'Stream started') {
+                    streamStatus.style.display = 'none';
+                    videoStream.style.display = 'block';
+                } else if (data.message === 'Stream stopped') {
+                    streamStatus.innerHTML = '<p>⏸️ Stream paused. Click "Start Stream" to resume.</p>';
+                    streamStatus.style.display = 'block';
+                    videoStream.style.display = 'none';
+                }
+            });
+
+            socket.on('video_frame', function(data) {
+                // Update the image source with the new frame
+                videoStream.src = 'data:image/jpeg;base64,' + data.frame;
+                frameCount++;
+
+                // Update FPS every second
+                const now = Date.now();
+                if (now - lastFpsUpdate > 1000) {
+                    const fps = Math.round((frameCount * 1000) / (now - lastFpsUpdate));
+                    document.getElementById('fps-text').textContent = fps + ' FPS';
+                    frameCount = 0;
+                    lastFpsUpdate = now;
+                }
+            });
+
+            socket.on('error', function(data) {
+                console.error('Stream error:', data.message);
+                streamStatus.innerHTML = '<p>❌ Error: ' + data.message + '</p>';
+                streamStatus.style.display = 'block';
+                videoStream.style.display = 'none';
+                toggleBtn.innerHTML = '▶️ Start Stream';
+                isStreaming = false;
+            });
+        }
+
+        toggleBtn.addEventListener('click', function() {
+            if (!socket || !socket.connected) {
+                alert('Not connected to server. Please wait for connection.');
+                return;
+            }
+
+            if (isStreaming) {
+                socket.emit('stop_stream');
+                toggleBtn.innerHTML = '▶️ Start Stream';
+                isStreaming = false;
+            } else {
+                socket.emit('start_stream');
+                toggleBtn.innerHTML = '⏸️ Stop Stream';
+                isStreaming = true;
+            }
+        });
+
+        refreshBtn.addEventListener('click', function() {
+            if (socket && socket.connected) {
+                socket.disconnect();
+                setTimeout(initSocket, 500);
+            }
+        });
+
+        // Initialize socket connection when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initSocket();
+            setTimeout(() => {
+                toggleBtn.disabled = false;
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

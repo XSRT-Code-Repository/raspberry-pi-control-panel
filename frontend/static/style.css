@@ -791,3 +791,65 @@ button.sweep-btn {
 .mb-20 {
     margin-bottom: 20px;
 }
+
+.webcam-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.webcam-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.status-message {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.status-message p {
+    margin: 0;
+    font-size: 1.1em;
+    color: #6c757d;
+}
+
+.webcam-info {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+.webcam-info h3 {
+    margin-top: 0;
+    color: #2c3e50;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 15px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.info-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.info-item strong {
+    display: block;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}

@@ -63,13 +63,8 @@
                     </select>
                 </div>
                 <div class="setting-item">
-                    <label for="quality-select">Quality:</label>
-                    <select id="quality-select" class="setting-select">
-                        <option value="60">60% (Low)</option>
-                        <option value="80" selected>80% (Medium)</option>
-                        <option value="90">90% (High)</option>
-                        <option value="100">100% (Best)</option>
-                    </select>
+                    <label for="quality-slider">Quality: <span id="quality-value">80</span>%</label>
+                    <input type="range" id="quality-slider" class="setting-slider" min="0" max="100" value="80" step="5">
                 </div>
                 <div class="setting-item">
                     <button id="apply-settings" class="setting-btn">Apply Settings</button>
@@ -158,6 +153,9 @@
                 document.getElementById('resolution-text').textContent = currentSettings.resolution;
                 const fps = Math.round(1000 / (currentSettings.latency * 1000));
                 document.getElementById('fps-text').textContent = '~' + fps + ' FPS';
+                // Update quality display
+                qualityValue.textContent = currentSettings.quality;
+                qualitySlider.value = currentSettings.quality;
             });
         }
 
@@ -188,13 +186,19 @@
         // Settings controls
         const resolutionSelect = document.getElementById('resolution-select');
         const latencySelect = document.getElementById('latency-select');
-        const qualitySelect = document.getElementById('quality-select');
+        const qualitySlider = document.getElementById('quality-slider');
+        const qualityValue = document.getElementById('quality-value');
         const applyBtn = document.getElementById('apply-settings');
+
+        // Update quality value display when slider changes
+        qualitySlider.addEventListener('input', function() {
+            qualityValue.textContent = this.value;
+        });
 
         function updateSettings() {
             currentSettings.resolution = resolutionSelect.value;
             currentSettings.latency = parseFloat(latencySelect.value);
-            currentSettings.quality = parseInt(qualitySelect.value);
+            currentSettings.quality = parseInt(qualitySlider.value);
 
             if (socket && socket.connected) {
                 socket.emit('update_settings', currentSettings);
@@ -223,6 +227,8 @@
         // Initialize socket connection when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initSocket();
+            // Initialize quality value display
+            qualityValue.textContent = qualitySlider.value;
             setTimeout(() => {
                 toggleBtn.disabled = false;
             }, 1000);

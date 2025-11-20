@@ -889,6 +889,50 @@ button.sweep-btn {
     border-color: #3498db;
 }
 
+.setting-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #ecf0f1;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: background-color 0.3s ease;
+}
+
+.setting-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3498db;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.setting-slider::-webkit-slider-thumb:hover {
+    background: #2980b9;
+    transform: scale(1.1);
+}
+
+.setting-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3498db;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.setting-slider::-moz-range-thumb:hover {
+    background: #2980b9;
+    transform: scale(1.1);
+}
+
 .setting-btn {
     padding: 10px 16px;
     background: #3498db;

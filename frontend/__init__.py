@@ -2,7 +2,6 @@ from flask import Flask
 from flask_socketio import SocketIO
 import backend.config as config
 from backend.servo_controller import MultiServoController
-from frontend.route import Route
 
 # Initialize Flask app
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -13,8 +12,21 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Initialize servo controller
 servo_controller = MultiServoController()
 
-# Pass app and socketio to Route class to register all routes and socket events
-Route(app, servo_controller, socketio)
+# Import and register route blueprints
+from .routes import routes_bp
+from .routes.api import api_bp
+
+# Register blueprints
+app.register_blueprint(routes_bp)
+app.register_blueprint(api_bp)
+
+# Initialize controllers in route modules
+from .routes.api import servos, health
+from .routes import webcam
+
+servos.init_servo_controller(servo_controller)
+health.init_servo_controller(servo_controller)
+webcam.init_socketio_and_controller(socketio, servo_controller)
 
 def cleanup():
     """Clean up resources"""

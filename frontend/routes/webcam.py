@@ -3,6 +3,8 @@ import cv2
 import threading
 import base64
 import time
+import psutil
+import json
 
 from . import routes_bp
 
@@ -20,12 +22,12 @@ def init_socketio_and_controller(sio, controller):
 
 def register_socket_events():
     @socketio.on('connect', namespace='/webcam')
-    def handle_connect():
+    def handle_webcam_connect():
         print('WebSocket client connected to webcam namespace')
         socketio.emit('status', {'message': 'Connected to webcam stream'}, namespace='/webcam')
 
     @socketio.on('disconnect', namespace='/webcam')
-    def handle_disconnect():
+    def handle_webcam_disconnect():
         print('WebSocket client disconnected from webcam namespace')
         streamer.stop_streaming()
 
@@ -44,6 +46,85 @@ def register_socket_events():
             socketio.emit('settings_updated', {'success': True}, namespace='/webcam')
         else:
             socketio.emit('error', {'message': 'Failed to update settings'}, namespace='/webcam')
+
+    # Health monitoring events
+    @socketio.on('connect', namespace='/health')
+    def handle_health_connect():
+        print('WebSocket client connected to health namespace')
+        # Send initial system info
+        system_info = get_system_info()
+        socketio.emit('system_info', system_info, namespace='/health')
+
+    @socketio.on('disconnect', namespace='/health')
+    def handle_health_disconnect():
+        print('WebSocket client disconnected from health namespace')
+        stop_health_monitoring()
+
+    @socketio.on('start_monitoring', namespace='/health')
+    def handle_start_monitoring():
+        start_health_monitoring()
+
+    @socketio.on('stop_monitoring', namespace='/health')
+    def handle_stop_monitoring():
+        stop_health_monitoring()
+
+def get_system_info():
+    """Get static system information"""
+    return {
+        'cpu_count': psutil.cpu_count(),
+        'cpu_freq': round(psutil.cpu_freq().current) if psutil.cpu_freq() else 0,
+        'ram_total': psutil.virtual_memory().total
+    }
+
+def get_health_data():
+    """Get current CPU and RAM usage"""
+    cpu_percent = psutil.cpu_percent(interval=0.1)
+    cpu_freq = psutil.cpu_freq()
+    ram = psutil.virtual_memory()
+
+    return {
+        'cpu': {
+            'percent': round(cpu_percent, 1),
+            'cores': psutil.cpu_count(),
+            'frequency': round(cpu_freq.current) if cpu_freq else 0
+        },
+        'ram': {
+            'percent': round(ram.percent, 1),
+            'used': ram.used,
+            'total': ram.total,
+            'available': ram.available
+        }
+    }
+
+# Health monitoring variables
+health_monitoring_active = False
+health_thread = None
+
+def start_health_monitoring():
+    global health_monitoring_active, health_thread
+    if health_monitoring_active:
+        return
+
+    health_monitoring_active = True
+    health_thread = threading.Thread(target=health_monitoring_loop)
+    health_thread.daemon = True
+    health_thread.start()
+
+def stop_health_monitoring():
+    global health_monitoring_active
+    health_monitoring_active = False
+
+def health_monitoring_loop():
+    global health_monitoring_active
+    while health_monitoring_active:
+        try:
+            data = get_health_data()
+            socketio.emit('health_data', data, namespace='/health')
+            time.sleep(1)  # Update every second
+        except Exception as e:
+            print(f"Error in health monitoring: {e}")
+            break
+    health_monitoring_active = False
 
 class WebcamStreamer:
     def __init__(self):

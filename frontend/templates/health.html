@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Health - XSRT Test Bench</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>System Health Monitor</h1>
+            <div class="header-controls">
+                <a href="/" class="header-btn">← Back to Control Panel</a>
+                <button id="toggle-monitoring" class="header-btn">▶️ Start Monitoring</button>
+                <button id="clear-data" class="header-btn secondary">🗑️ Clear Data</button>
+            </div>
+        </header>
+
+        <div class="health-overview">
+            <div class="metric-card">
+                <h3>CPU Usage</h3>
+                <div class="metric-display">
+                    <div class="metric-value" id="cpu-percent">0%</div>
+                    <div class="metric-chart">
+                        <canvas id="cpuChart" width="200" height="100"></canvas>
+                    </div>
+                </div>
+                <div class="metric-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Cores:</span>
+                        <span class="detail-value" id="cpu-cores">0</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Frequency:</span>
+                        <span class="detail-value" id="cpu-freq">0 MHz</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Memory Usage</h3>
+                <div class="metric-display">
+                    <div class="metric-value" id="ram-percent">0%</div>
+                    <div class="metric-chart">
+                        <canvas id="ramChart" width="200" height="100"></canvas>
+                    </div>
+                </div>
+                <div class="metric-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Used:</span>
+                        <span class="detail-value" id="ram-used">0 MB</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Total:</span>
+                        <span class="detail-value" id="ram-total">0 MB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="health-charts">
+            <div class="chart-container">
+                <h3>CPU Usage History</h3>
+                <canvas id="cpuHistoryChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Memory Usage History</h3>
+                <canvas id="ramHistoryChart"></canvas>
+            </div>
+        </div>
+
+        <div class="health-info">
+            <h3>System Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Status:</strong> <span id="monitor-status">Disconnected</span>
+                </div>
+                <div class="info-item">
+                    <strong>Update Rate:</strong> <span id="update-rate">1 Hz</span>
+                </div>
+                <div class="info-item">
+                    <strong>Data Points:</strong> <span id="data-points">0</span>
+                </div>
+                <div class="info-item">
+                    <strong>Connection:</strong> <span id="connection-type">WebSocket</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let isMonitoring = false;
+        let cpuHistory = [];
+        let ramHistory = [];
+        let timestamps = [];
+        let maxDataPoints = 60; // 1 minute of data at 1Hz
+
+        let cpuChart, ramChart, cpuHistoryChart, ramHistoryChart;
+
+        function initSocket() {
+            socket = io('/health');
+
+            socket.on('connect', function() {
+                console.log('Connected to health WebSocket');
+                document.getElementById('monitor-status').textContent = 'Connected';
+            });
+
+            socket.on('disconnect', function() {
+                console.log('Disconnected from health WebSocket');
+                document.getElementById('monitor-status').textContent = 'Disconnected';
+                isMonitoring = false;
+                document.getElementById('toggle-monitoring').innerHTML = '▶️ Start Monitoring';
+                document.getElementById('toggle-monitoring').disabled = true;
+                setTimeout(initSocket, 2000);
+            });
+
+            socket.on('health_data', function(data) {
+                updateHealthDisplay(data);
+                updateCharts(data);
+            });
+
+            socket.on('system_info', function(data) {
+                updateSystemInfo(data);
+            });
+        }
+
+        function updateHealthDisplay(data) {
+            // Update CPU display
+            document.getElementById('cpu-percent').textContent = data.cpu.percent + '%';
+            document.getElementById('cpu-cores').textContent = data.cpu.cores;
+            document.getElementById('cpu-freq').textContent = data.cpu.frequency + ' MHz';
+
+            // Update RAM display
+            document.getElementById('ram-percent').textContent = data.ram.percent + '%';
+            document.getElementById('ram-used').textContent = Math.round(data.ram.used / 1024 / 1024) + ' MB';
+            document.getElementById('ram-total').textContent = Math.round(data.ram.total / 1024 / 1024) + ' MB';
+
+            // Update data points counter
+            document.getElementById('data-points').textContent = cpuHistory.length;
+        }
+
+        function updateCharts(data) {
+            const now = new Date();
+            const timeString = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0') + ':' + now.getSeconds().toString().padStart(2, '0');
+
+            // Add new data points
+            cpuHistory.push(data.cpu.percent);
+            ramHistory.push(data.ram.percent);
+            timestamps.push(timeString);
+
+            // Limit data points
+            if (cpuHistory.length > maxDataPoints) {
+                cpuHistory.shift();
+                ramHistory.shift();
+                timestamps.shift();
+            }
+
+            // Update mini charts
+            updateMiniCharts(data);
+
+            // Update history charts
+            updateHistoryCharts();
+        }
+
+        function updateMiniCharts(data) {
+            // CPU mini chart
+            if (cpuChart) {
+                cpuChart.data.datasets[0].data[0] = data.cpu.percent;
+                cpuChart.data.datasets[0].data[1] = 100 - data.cpu.percent;
+                cpuChart.update('none'); // Update without animation to prevent resetting appearance
+            } else {
+                const cpuData = {
+                    labels: ['Used', 'Free'],
+                    datasets: [{
+                        data: [data.cpu.percent, 100 - data.cpu.percent],
+                        backgroundColor: ['#e74c3c', '#ecf0f1'],
+                        borderWidth: 0
+                    }]
+                };
+                cpuChart = new Chart(document.getElementById('cpuChart'), {
+                    type: 'doughnut',
+                    data: cpuData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        cutout: '70%',
+                        animation: { duration: 0 } // Disable animations for smooth updates
+                    }
+                });
+            }
+
+            // RAM mini chart
+            if (ramChart) {
+                ramChart.data.datasets[0].data[0] = data.ram.percent;
+                ramChart.data.datasets[0].data[1] = 100 - data.ram.percent;
+                ramChart.update('none'); // Update without animation to prevent resetting appearance
+            } else {
+                const ramData = {
+                    labels: ['Used', 'Free'],
+                    datasets: [{
+                        data: [data.ram.percent, 100 - data.ram.percent],
+                        backgroundColor: ['#3498db', '#ecf0f1'],
+                        borderWidth: 0
+                    }]
+                };
+                ramChart = new Chart(document.getElementById('ramChart'), {
+                    type: 'doughnut',
+                    data: ramData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        cutout: '70%',
+                        animation: { duration: 0 } // Disable animations for smooth updates
+                    }
+                });
+            }
+        }
+
+        function updateHistoryCharts() {
+            // CPU History Chart
+            if (cpuHistoryChart) {
+                cpuHistoryChart.data.labels = timestamps;
+                cpuHistoryChart.data.datasets[0].data = cpuHistory;
+                cpuHistoryChart.update('none'); // Update without animation for smooth real-time updates
+            } else {
+                const cpuHistoryData = {
+                    labels: timestamps,
+                    datasets: [{
+                        label: 'CPU Usage (%)',
+                        data: cpuHistory,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                };
+                cpuHistoryChart = new Chart(document.getElementById('cpuHistoryChart'), {
+                    type: 'line',
+                    data: cpuHistoryData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            },
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                },
+                                ticks: {
+                                    maxTicksLimit: 10,
+                                    callback: function(value, index) {
+                                        // Show time labels at regular intervals
+                                        if (index % Math.ceil(timestamps.length / 10) === 0) {
+                                            return this.getLabelForValue(value);
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        },
+                        elements: {
+                            point: { radius: 0 }
+                        },
+                        animation: { duration: 0 } // Disable animations for real-time updates
+                    }
+                });
+            }
+
+            // RAM History Chart
+            if (ramHistoryChart) {
+                ramHistoryChart.data.labels = timestamps;
+                ramHistoryChart.data.datasets[0].data = ramHistory;
+                ramHistoryChart.update('none'); // Update without animation for smooth real-time updates
+            } else {
+                const ramHistoryData = {
+                    labels: timestamps,
+                    datasets: [{
+                        label: 'RAM Usage (%)',
+                        data: ramHistory,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                };
+                ramHistoryChart = new Chart(document.getElementById('ramHistoryChart'), {
+                    type: 'line',
+                    data: ramHistoryData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            },
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                },
+                                ticks: {
+                                    maxTicksLimit: 10,
+                                    callback: function(value, index) {
+                                        // Show time labels at regular intervals
+                                        if (index % Math.ceil(timestamps.length / 10) === 0) {
+                                            return this.getLabelForValue(value);
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        },
+                        elements: {
+                            point: { radius: 0 }
+                        },
+                        animation: { duration: 0 } // Disable animations for real-time updates
+                    }
+                });
+            }
+        }
+
+        function updateSystemInfo(data) {
+            document.getElementById('cpu-cores').textContent = data.cpu_count;
+            document.getElementById('cpu-freq').textContent = data.cpu_freq + ' MHz';
+            document.getElementById('ram-total').textContent = Math.round(data.ram_total / 1024 / 1024) + ' MB';
+        }
+
+        // Control buttons
+        document.getElementById('toggle-monitoring').addEventListener('click', function() {
+            if (!socket || !socket.connected) {
+                alert('Not connected to server. Please wait for connection.');
+                return;
+            }
+
+            if (isMonitoring) {
+                socket.emit('stop_monitoring');
+                this.innerHTML = '▶️ Start Monitoring';
+                isMonitoring = false;
+            } else {
+                socket.emit('start_monitoring');
+                this.innerHTML = '⏸️ Stop Monitoring';
+                isMonitoring = true;
+            }
+        });
+
+        document.getElementById('clear-data').addEventListener('click', function() {
+            cpuHistory = [];
+            ramHistory = [];
+            timestamps = [];
+            document.getElementById('data-points').textContent = '0';
+            updateHistoryCharts();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initSocket();
+            setTimeout(() => {
+                document.getElementById('toggle-monitoring').disabled = false;
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

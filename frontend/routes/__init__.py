@@ -4,4 +4,4 @@ from flask import Blueprint
 routes_bp = Blueprint('routes', __name__)
 
 # Import route modules to register them
-from . import index, api, webcam
+from . import index, api, webcam, health_page

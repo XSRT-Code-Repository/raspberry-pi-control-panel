@@ -40,6 +40,41 @@
                     <strong>Connection:</strong> <span id="connection-text">WebSocket</span>
                 </div>
             </div>
+
+            <h3>Stream Settings</h3>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="resolution-select">Resolution:</label>
+                    <select id="resolution-select" class="setting-select">
+                        <option value="320x240">320x240 (Low)</option>
+                        <option value="640x480" selected>640x480 (Medium)</option>
+                        <option value="800x600">800x600 (High)</option>
+                        <option value="1280x720">1280x720 (HD)</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="latency-select">Latency:</label>
+                    <select id="latency-select" class="setting-select">
+                        <option value="0.016">60 FPS (16ms)</option>
+                        <option value="0.033" selected>30 FPS (33ms)</option>
+                        <option value="0.066">15 FPS (66ms)</option>
+                        <option value="0.1">10 FPS (100ms)</option>
+                        <option value="0.2">5 FPS (200ms)</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="quality-select">Quality:</label>
+                    <select id="quality-select" class="setting-select">
+                        <option value="60">60% (Low)</option>
+                        <option value="80" selected>80% (Medium)</option>
+                        <option value="90">90% (High)</option>
+                        <option value="100">100% (Best)</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <button id="apply-settings" class="setting-btn">Apply Settings</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -54,6 +89,11 @@
         let isStreaming = false;
         let frameCount = 0;
         let lastFpsUpdate = Date.now();
+        let currentSettings = {
+            resolution: '640x480',
+            latency: 0.033,
+            quality: 80
+        };
 
         function initSocket() {
             socket = io('/webcam');
@@ -62,6 +102,8 @@
                 console.log('Connected to WebSocket');
                 statusText.textContent = 'Connected';
                 streamStatus.innerHTML = '<p>✅ Connected! Click "Start Stream" to begin.</p>';
+                // Send current settings to server
+                socket.emit('update_settings', currentSettings);
             });
 
             socket.on('disconnect', function() {
@@ -110,6 +152,13 @@
                 toggleBtn.innerHTML = '▶️ Start Stream';
                 isStreaming = false;
             });
+
+            socket.on('settings_updated', function(data) {
+                console.log('Settings updated:', data);
+                document.getElementById('resolution-text').textContent = currentSettings.resolution;
+                const fps = Math.round(1000 / (currentSettings.latency * 1000));
+                document.getElementById('fps-text').textContent = '~' + fps + ' FPS';
+            });
         }
 
         toggleBtn.addEventListener('click', function() {
@@ -135,6 +184,41 @@
                 setTimeout(initSocket, 500);
             }
         });
+
+        // Settings controls
+        const resolutionSelect = document.getElementById('resolution-select');
+        const latencySelect = document.getElementById('latency-select');
+        const qualitySelect = document.getElementById('quality-select');
+        const applyBtn = document.getElementById('apply-settings');
+
+        function updateSettings() {
+            currentSettings.resolution = resolutionSelect.value;
+            currentSettings.latency = parseFloat(latencySelect.value);
+            currentSettings.quality = parseInt(qualitySelect.value);
+
+            if (socket && socket.connected) {
+                socket.emit('update_settings', currentSettings);
+                applyBtn.textContent = 'Applying...';
+                applyBtn.disabled = true;
+
+                // Re-enable button after a short delay
+                setTimeout(() => {
+                    applyBtn.textContent = 'Apply Settings';
+                    applyBtn.disabled = false;
+                }, 1000);
+            } else {
+                alert('Not connected to server. Settings will be applied when connected.');
+            }
+        }
+
+        applyBtn.addEventListener('click', updateSettings);
+
+        // Auto-apply settings when streaming starts
+        function applyCurrentSettings() {
+            if (socket && socket.connected) {
+                socket.emit('update_settings', currentSettings);
+            }
+        }
 
         // Initialize socket connection when page loads
         document.addEventListener('DOMContentLoaded', function() {

@@ -38,12 +38,41 @@ def register_socket_events():
     def handle_stop_stream():
         streamer.stop_streaming()
 
+    @socketio.on('update_settings', namespace='/webcam')
+    def handle_update_settings(data):
+        if streamer.update_settings(data):
+            socketio.emit('settings_updated', {'success': True}, namespace='/webcam')
+        else:
+            socketio.emit('error', {'message': 'Failed to update settings'}, namespace='/webcam')
+
 class WebcamStreamer:
     def __init__(self):
         self.camera = None
         self.camera_lock = threading.Lock()
         self.streaming_active = False
         self.stream_thread = None
+        self.settings = {
+            'resolution': (640, 480),
+            'latency': 0.033,  # ~30 FPS
+            'quality': 80
+        }
+
+    def update_settings(self, new_settings):
+        """Update streaming settings"""
+        try:
+            # Parse resolution
+            width, height = map(int, new_settings.get('resolution', '640x480').split('x'))
+            self.settings['resolution'] = (width, height)
+
+            # Update other settings
+            self.settings['latency'] = float(new_settings.get('latency', 0.033))
+            self.settings['quality'] = int(new_settings.get('quality', 80))
+
+            print(f"Updated webcam settings: {self.settings}")
+            return True
+        except Exception as e:
+            print(f"Error updating settings: {e}")
+            return False
 
     def get_camera(self):
         with self.camera_lock:
@@ -78,11 +107,12 @@ class WebcamStreamer:
                     socketio.emit('error', {'message': 'Failed to read frame from camera'}, namespace='/webcam')
                     break
 
-                # Resize frame for better performance
-                frame = cv2.resize(frame, (640, 480))
+                # Resize frame based on current settings
+                width, height = self.settings['resolution']
+                frame = cv2.resize(frame, (width, height))
 
-                # Encode frame as JPEG
-                ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                # Encode frame as JPEG with current quality setting
+                ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, self.settings['quality']])
                 if not ret:
                     continue
 
@@ -92,8 +122,8 @@ class WebcamStreamer:
                 # Emit frame to client
                 socketio.emit('video_frame', {'frame': frame_data}, namespace='/webcam')
 
-                # Small delay to control frame rate (~30 FPS)
-                time.sleep(0.033)
+                # Small delay to control frame rate based on latency setting
+                time.sleep(self.settings['latency'])
 
         except Exception as e:
             print(f"Error in video streaming: {e}")

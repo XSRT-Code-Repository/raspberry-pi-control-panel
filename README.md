@@ -18,7 +18,7 @@ servo_controller/
 
 1. **Create python venv**
 ```bash
-python -m venv ./venv
+python -m venv ./.venv
 ```
 
 2. **Activate venv**
@@ -30,7 +30,7 @@ venv\Scripts\activate
 
 Linux
 ```
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 3. **Install dependencies:**
